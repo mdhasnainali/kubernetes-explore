@@ -1,0 +1,85 @@
+# ─── Kubernetes / kubeconfig ───────────────────────────────
+kubeconfig
+*.kubeconfig
+.kube/
+admin.conf
+*.pem
+*.crt
+*.key
+*.csr
+
+# ─── Minikube ──────────────────────────────────────────────
+.minikube/
+minikube-linux-*
+minikube-darwin-*
+minikube-windows-*
+
+# ─── Secrets / credentials ─────────────────────────────────
+# Real credentials must NEVER be committed.
+# Demo secrets in this repo are intentional learning fixtures.
+*.secret.yaml
+*-secret.local.yaml
+secrets.local.*
+.env
+.env.*
+!.env.example
+*.token
+*.credentials
+
+# ─── Helm ──────────────────────────────────────────────────
+charts/*.tgz
+*.tgz
+.helm/
+values.local.yaml
+
+# ─── Kustomize ─────────────────────────────────────────────
+kustomization.local.yaml
+
+# ─── Terraform (if IaC added later) ────────────────────────
+*.tfstate
+*.tfstate.*
+.terraform/
+*.tfvars
+!example.tfvars
+
+# ─── Language / build artifacts ────────────────────────────
+node_modules/
+dist/
+build/
+__pycache__/
+*.py[cod]
+vendor/
+bin/
+target/
+
+# ─── Logs / temp ───────────────────────────────────────────
+*.log
+logs/
+tmp/
+*.tmp
+*.bak
+*.orig
+
+# ─── OS ────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ─── Editors / IDE ─────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+*.sublime-project
+*.sublime-workspace
+.project
+.classpath
+
+# ─── Claude Code local state ───────────────────────────────
+.claude/
