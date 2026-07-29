@@ -16,9 +16,10 @@ kubectl get nodes       # confirm node is Ready
 
 Follow in order — each builds on the concepts of the previous.
 
-| #   | Directory                                    | Focus                                                                                  | Key objects                                                   |
-| --- | -------------------------------------------- | -------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
-| 1   | [`mongo-webapp-demo/`](./mongo-webapp-demo/) | First full app: DB + web app, wiring config and secrets, exposing a service externally | ConfigMap, Secret, Deployment, Service (ClusterIP + NodePort) |
+| #   | Directory                                                              | Focus                                                                                  | Key objects                                                   |
+| --- | ---------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| 1   | [`1-expose-app-with-nodeport/`](./1-expose-app-with-nodeport/)         | First full app: DB + web app, wiring config and secrets, exposing a service externally | ConfigMap, Secret, Deployment, Service (ClusterIP + NodePort) |
+| 2   | [`2-expose-app-with-ingress/`](./2-expose-app-with-ingress/)           | Same app, external access via hostname routing instead of a NodePort                   | Ingress (`networking.k8s.io/v1`), nginx ingress controller    |
 
 > More lessons get added here as the exploration continues.
 
@@ -54,6 +55,7 @@ Follow in order — each builds on the concepts of the previous.
   - `ClusterIP` (default) — internal-only.
   - `NodePort` — external access on each node, port range **30000–32767**.
   - `LoadBalancer` — cloud external LB (`minikube tunnel` locally).
+- **Ingress** — HTTP host/path routing rules into cluster Services. Inert without an **Ingress controller** (`minikube addons enable ingress`).
 - **ConfigMap** — non-secret key/value config.
 - **Secret** — sensitive data, base64-encoded (⚠️ not encrypted at rest by default).
 
@@ -62,7 +64,9 @@ Follow in order — each builds on the concepts of the previous.
 ```bash
 minikube start          # start
 minikube status         # state
+minikube ip             # cluster IP (for /etc/hosts entries)
 minikube dashboard      # web UI
+minikube addons list    # optional components (ingress, metrics-server, ...)
 minikube stop           # stop (keeps state)
 minikube delete         # destroy
 ```

@@ -1,7 +1,10 @@
-# MongoDB + WebApp on Minikube — Study Notes
+# Expose an App with NodePort — Study Notes
 
 A minimal Kubernetes demo: a MongoDB database plus a Node.js web app that talks to it,
 running locally on Minikube. Config split into ConfigMap, Secret, two Deployments, two Services.
+The web app is reached from the browser via a **NodePort** Service on port `30100`.
+
+> Next lesson swaps NodePort for an Ingress: [`../2-expose-app-with-ingress/`](../2-expose-app-with-ingress/)
 
 ## Architecture
 
