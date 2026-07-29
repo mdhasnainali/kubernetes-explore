@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mongo-config-map
+data:
+  # Stable per-pod DNS name from the headless Service, not a load-balanced Service VIP.
+  # The webapp always talks to pod 0 — see the README on why these 3 mongods are separate DBs.
+  mongo-url: mongo-0.mongo-service
