@@ -23,6 +23,8 @@ Follow in order — each builds on the concepts of the previous.
 
 > More lessons get added here as the exploration continues.
 
+**Roadmap:** [`TASKS.md`](./TASKS.md) — phased task list from here to production readiness, plus capstone projects.
+
 ## How each lesson works
 
 1. `cd` into the lesson directory.
