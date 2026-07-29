@@ -20,6 +20,7 @@ Follow in order — each builds on the concepts of the previous.
 | --- | ---------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
 | 1   | [`1-expose-app-with-nodeport/`](./1-expose-app-with-nodeport/)         | First full app: DB + web app, wiring config and secrets, exposing a service externally | ConfigMap, Secret, Deployment, Service (ClusterIP + NodePort) |
 | 2   | [`2-expose-app-with-ingress/`](./2-expose-app-with-ingress/)           | Same app, external access via hostname routing instead of a NodePort                   | Ingress (`networking.k8s.io/v1`), nginx ingress controller    |
+| 3   | [`3-expose-app-with-persist-data/`](./3-expose-app-with-persist-data/) | Same app, MongoDB data survives pod deletion via node-local storage                    | PersistentVolume (`hostPath`), PersistentVolumeClaim, volumeMounts |
 
 > More lessons get added here as the exploration continues.
 
@@ -58,6 +59,7 @@ Follow in order — each builds on the concepts of the previous.
   - `NodePort` — external access on each node, port range **30000–32767**.
   - `LoadBalancer` — cloud external LB (`minikube tunnel` locally).
 - **Ingress** — HTTP host/path routing rules into cluster Services. Inert without an **Ingress controller** (`minikube addons enable ingress`).
+- **PersistentVolume / PersistentVolumeClaim** — storage decoupled from pod lifetime. The PV is the storage, the PVC is the request; pods mount the claim.
 - **ConfigMap** — non-secret key/value config.
 - **Secret** — sensitive data, base64-encoded (⚠️ not encrypted at rest by default).
 
