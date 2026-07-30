@@ -1,0 +1,76 @@
+# Headless Service: clusterIP None means no load-balanced VIP. DNS returns the pod IPs,
+# and each pod additionally gets a stable per-pod name: mongo-<n>.mongo-service
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongo-service
+  labels:
+    app: mongo
+spec:
+  clusterIP: None
+  selector:
+    app: mongo
+  ports:
+    - protocol: TCP
+      port: 27017
+      targetPort: 27017
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mongo
+spec:
+  serviceName: mongo-service # must name the headless Service above; drives pod DNS
+  replicas: 3
+  selector:
+    matchLabels:
+      app: mongo
+  template:
+    metadata:
+      labels:
+        app: mongo
+    spec:
+      terminationGracePeriodSeconds: 10
+      containers:
+        - name: mongodb
+          image: mongo:7.0
+          env:
+            - name: MONGO_INITDB_ROOT_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: mongo-secret
+                  key: mongo-user
+            - name: MONGO_INITDB_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mongo-secret
+                  key: mongo-password
+          ports:
+            - name: mongo
+              containerPort: 27017
+          # Not autoscaled (see README), but requests are still needed so the scheduler
+          # can reserve capacity — otherwise burst load on mongo starves the webapp pods
+          # the HPA just created on the same node.
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          volumeMounts:
+            - name: mongo-data # matches the volumeClaimTemplate name below
+              mountPath: /data/db
+  # Not `volumes:` — the StatefulSet stamps out one PVC per pod from this template:
+  # mongo-data-mongo-0, mongo-data-mongo-1, mongo-data-mongo-2
+  volumeClaimTemplates:
+    - metadata:
+        name: mongo-data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: local-storage
+        resources:
+          requests:
+            storage: 1Gi

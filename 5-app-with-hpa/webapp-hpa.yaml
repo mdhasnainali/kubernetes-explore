@@ -1,0 +1,56 @@
+apiVersion: autoscaling/v2 # v1 is CPU-only and has no `behavior`; always use v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: webapp-hpa
+spec:
+  # What to resize. The HPA writes to the target's /scale subresource — it does not
+  # create pods itself, it just edits spec.replicas and lets the Deployment do the work.
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: webapp-deployment
+  minReplicas: 2 # keep 2 for availability even at idle
+  maxReplicas: 10 # hard ceiling: cost/blast-radius guard, and the cluster must fit them
+
+  # Multiple metrics: the HPA computes a desired replica count for EACH metric
+  # independently and takes the HIGHEST. Any metric can scale up; scale-down needs all.
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization # percentage of the pod's cpu REQUEST (100m here)
+          averageUtilization: 50 # aim for ~50m used per pod
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80 # of the 64Mi request; see README on why memory is a weak signal
+
+  # Without `behavior`, defaults are: scale up by max(4 pods, 100%) per 60s with no
+  # stabilization, scale down to the target with a 300s stabilization window.
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 0 # react to spikes immediately
+      policies:
+        - type: Percent
+          value: 100 # at most double...
+          periodSeconds: 30
+        - type: Pods
+          value: 4 # ...or +4 pods, per 30s window
+          periodSeconds: 30
+      selectPolicy: Max # allow the more aggressive of the two
+    scaleDown:
+      # The anti-flapping knob. For the last 120s the controller keeps the HIGHEST
+      # recommendation it saw and only shrinks to that — so a brief dip in load
+      # can't immediately tear down pods that a returning spike would need again.
+      stabilizationWindowSeconds: 120
+      policies:
+        - type: Percent
+          value: 50 # remove at most half the pods per minute
+          periodSeconds: 60
+      selectPolicy: Max
+    # `tolerance` (per-direction, replaces the cluster-wide 10% default) is alpha as of
+    # v1.33 behind the HPAConfigurableTolerance feature gate — not enabled on minikube:
+    #   scaleDown: { tolerance: 0.05 }

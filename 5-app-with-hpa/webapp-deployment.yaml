@@ -1,0 +1,91 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webapp-deployment
+  labels:
+    app: webapp
+spec:
+  # NOTE: no `replicas:` field here. The HPA owns the replica count — see webapp-hpa.yaml.
+  # Leaving it out means `kubectl apply` never resets a scaled-up Deployment back to 2.
+  # Initial count on first create is 1 (the API default); the HPA raises it to minReplicas.
+  selector:
+    matchLabels:
+      app: webapp
+  template:
+    metadata:
+      labels:
+        app: webapp
+    spec:
+      containers:
+        - name: webapp
+          image: nanajanashia/k8s-demo-app:v1.0
+          env:
+            - name: USER_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: mongo-secret
+                  key: mongo-user
+            - name: USER_PWD
+              valueFrom:
+                secretKeyRef:
+                  name: mongo-secret
+                  key: mongo-password
+            - name: DB_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: mongo-config-map
+                  key: mongo-url
+          ports:
+            - containerPort: 3000
+          # THE prerequisite for a CPU/memory HPA. Utilization is a percentage OF THE REQUEST,
+          # so with no request there is no denominator and the HPA reports <unknown>.
+          resources:
+            requests:
+              cpu: 100m # 0.1 core -> 50% target means the HPA aims at ~50m per pod
+              memory: 64Mi
+            limits:
+              cpu: 300m # throttle ceiling; NOT what utilization is measured against
+              memory: 256Mi
+          # Readiness matters more once pods come and go: a pod counts toward the Service
+          # only when Ready, and the HPA ignores not-yet-ready pods when averaging CPU.
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: webapp-service
+spec:
+  selector:
+    app: webapp
+  ports:
+    - protocol: TCP
+      port: 3000
+      targetPort: 3000
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: webapp-ingress
+spec:
+  rules:
+    - host: myapp.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: webapp-service
+                port:
+                  number: 3000
