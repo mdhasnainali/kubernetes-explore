@@ -19,10 +19,11 @@ Follow in order — each builds on the concepts of the previous.
 | #   | Directory                                                              | Focus                                                                                  | Key objects                                                   |
 | --- | ---------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
 | 1   | [`1-expose-app-with-nodeport/`](./1-expose-app-with-nodeport/)         | First full app: DB + web app, wiring config and secrets, exposing a service externally | ConfigMap, Secret, Deployment, Service (ClusterIP + NodePort) |
-| 2   | [`2-expose-app-with-ingress/`](./2-expose-app-with-ingress/)           | Same app, external access via hostname routing instead of a NodePort                   | Ingress (`networking.k8s.io/v1`), nginx ingress controller    |
-| 3   | [`3-app-with-persist-data/`](./3-app-with-persist-data/)               | Same app, MongoDB data survives pod deletion via node-local storage                    | PersistentVolume (`hostPath`), PersistentVolumeClaim, volumeMounts |
-| 4   | [`4-app-with-statefulset/`](./4-app-with-statefulset/)                 | MongoDB as 3 pods with stable identity and one volume each, on local storage           | StatefulSet, headless Service, `volumeClaimTemplates`, StorageClass (`WaitForFirstConsumer`) |
-| 5   | [`5-app-with-hpa/`](./5-app-with-hpa/)                                 | Web app replica count driven by measured CPU/memory instead of a fixed number          | HorizontalPodAutoscaler (`autoscaling/v2`), metrics-server, resource requests/limits, probes |
+| 2   | [`2-configmap-from-dot-env/`](./2-configmap-from-dot-env/)             | Same app, ConfigMap generated from a `.env` file instead of hand-written               | Kustomize `configMapGenerator`, `envFrom` vs `valueFrom`      |
+| 3   | [`3-expose-app-with-ingress/`](./3-expose-app-with-ingress/)           | Same app, external access via hostname routing instead of a NodePort                   | Ingress (`networking.k8s.io/v1`), nginx ingress controller    |
+| 4   | [`4-app-with-persist-data/`](./4-app-with-persist-data/)               | Same app, MongoDB data survives pod deletion via node-local storage                    | PersistentVolume (`hostPath`), PersistentVolumeClaim, volumeMounts |
+| 5   | [`5-app-with-statefulset/`](./5-app-with-statefulset/)                 | MongoDB as 3 pods with stable identity and one volume each, on local storage           | StatefulSet, headless Service, `volumeClaimTemplates`, StorageClass (`WaitForFirstConsumer`) |
+| 6   | [`6-app-with-hpa/`](./6-app-with-hpa/)                                 | Web app replica count driven by measured CPU/memory instead of a fixed number          | HorizontalPodAutoscaler (`autoscaling/v2`), metrics-server, resource requests/limits, probes |
 
 > More lessons get added here as the exploration continues.
 
@@ -66,6 +67,21 @@ Follow in order — each builds on the concepts of the previous.
 - **HorizontalPodAutoscaler** — rewrites a workload's `spec.replicas` from observed metrics. Needs resource `requests` and **metrics-server** (`minikube addons enable metrics-server`).
 - **ConfigMap** — non-secret key/value config.
 - **Secret** — sensitive data, base64-encoded (⚠️ not encrypted at rest by default).
+- Two ways to inject config/secrets into a container:
+  - **`valueFrom`** — one key at a time, rename allowed (env var name ≠ key name):
+    ```yaml
+    env:
+      - name: DB_URL
+        valueFrom:
+          configMapKeyRef: { name: mongo-config-map, key: MONGO_URL }
+    ```
+  - **`envFrom`** — every key at once, env var name **must** match the key name exactly:
+    ```yaml
+    envFrom:
+      - configMapRef: { name: mongo-config-map }
+      - secretRef:
+          name: mongo-secret
+    ```
 
 ## Cluster lifecycle
 
